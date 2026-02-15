@@ -3,10 +3,6 @@ import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: [true, "Name is required"],
-    },
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -19,23 +15,15 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters long"],
     },
-    orders: [
-      {
-        order: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Order",
-        },
-      },
-    ],
     role: {
       type: String,
-      enum: ["customer", "admin"],
-      default: "customer",
+      enum: ["user", "admin"],
+      default: "user",
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Pre-save hook to hash password before saving to database
