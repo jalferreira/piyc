@@ -46,7 +46,8 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/teams", teamRoutes);
 
+connectDB();
+
 app.listen(PORT, () => {
   console.log("Server is running on http://localhost:" + PORT);
-  connectDB();
 });
