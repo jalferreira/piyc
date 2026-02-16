@@ -15,8 +15,8 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
   "*",
-  "https://www.lufthansa-lgsp.com",
-  "https://lufthansa-lgsp.com",
+  "https://www.lgspintercontinentalyouthcup.com",
+  "https://lgspintercontinentalyouthcup.com/",
 ];
 
 app.use(
@@ -39,6 +39,7 @@ app.options("*", (req, res) => {
   res.sendStatus(200);
 });
 
+app.use("/uploads", express.static("public/uploads"));
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 

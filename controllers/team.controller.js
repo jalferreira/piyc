@@ -1,6 +1,11 @@
 import { redis } from "../lib/redis.js";
-import cloudinary from "../lib/cloudinary.js";
 import Team from "../models/team.model.js";
+import { deleteFile, getFileUrl } from "../lib/multer.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const getAllTeams = async (req, res) => {
   try {
@@ -14,24 +19,26 @@ export const getAllTeams = async (req, res) => {
 
 export const createTeam = async (req, res) => {
   try {
-    const { players, name, country, image } = req.body;
+    const { players, name, country } = req.body;
+    let imageUrl = "";
 
-    if (image) {
-      const cloudinaryResponse = await cloudinary.uploader.upload(image, {
-        folder: "teams",
-      });
-      image = cloudinaryResponse.secure_url;
+    if (req.file) {
+      imageUrl = `/uploads/teams/${req.file.filename}`;
     }
 
     const team = await Team.create({
       name,
       country,
       players: players || [],
-      image: image || "",
+      image: imageUrl,
     });
 
     res.status(201).json(team);
   } catch (error) {
+    // Delete uploaded file if there's an error
+    if (req.file) {
+      deleteFile(req.file.path);
+    }
     console.log("Error in createTeam controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -44,7 +51,13 @@ export const deleteTeam = async (req, res) => {
 
     if (team.image) {
       try {
-        await cloudinary.uploader.destroy(`teams/${team.image}`);
+        const filePath = path.join(
+          __dirname,
+          "..",
+          "public",
+          team.image.replace(/^\//, ""),
+        );
+        deleteFile(filePath);
       } catch (e) {}
     }
 
@@ -61,28 +74,35 @@ export const editTeam = async (req, res) => {
     const team = await Team.findById(req.params.id);
     if (!team) return res.status(404).json({ message: "Team not found" });
 
-    const { name, country, players, image } = req.body;
+    const { name, country, players } = req.body;
 
     if (name !== undefined) team.name = name;
     if (country !== undefined) team.country = country;
     if (players !== undefined) team.players = players;
 
-    if (image !== undefined) {
+    if (req.file) {
       if (team.image) {
         try {
-          await cloudinary.uploader.destroy(`teams/${team.image}`);
+          const filePath = path.join(
+            __dirname,
+            "..",
+            "public",
+            team.image.replace(/^\//, ""),
+          );
+          deleteFile(filePath);
         } catch (e) {}
       }
-      const cloudinaryResponse = await cloudinary.uploader.upload(image, {
-        folder: "teams",
-      });
-      team.image = cloudinaryResponse.secure_url;
+      team.image = `/uploads/teams/${req.file.filename}`;
     }
 
     const updatedTeam = await team.save();
     await updateFeaturedTeamsCache();
     res.json(updatedTeam);
   } catch (error) {
+    // Delete uploaded file if there's an error
+    if (req.file) {
+      deleteFile(req.file.path);
+    }
     console.log("Error in editTeam controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
