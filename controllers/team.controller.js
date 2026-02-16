@@ -1,4 +1,3 @@
-import { redis } from "../lib/redis.js";
 import Team from "../models/team.model.js";
 import { deleteFile, getFileUrl } from "../lib/multer.js";
 import path from "path";
