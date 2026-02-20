@@ -5,6 +5,9 @@ import cors from "cors";
 
 import authRoutes from "./routes/auth.route.js";
 import teamRoutes from "./routes/team.route.js";
+import eventRoutes from "./routes/event.route.js";
+import gameRoutes from "./routes/game.route.js";
+import standingsRoutes from "./routes/standings.route.js";
 
 import { connectDB } from "./lib/db.js";
 
@@ -45,6 +48,9 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/teams", teamRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/standings", standingsRoutes);
+app.use("/api/games", gameRoutes);
 
 connectDB();
 

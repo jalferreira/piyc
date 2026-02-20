@@ -16,8 +16,18 @@ const eventSchema = new mongoose.Schema(
       ref: "Player",
       required: true,
     },
+ team: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Team",
+      required: true,
+    },
+    game: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Game",
+      required: true,
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const Event = mongoose.model("Event", eventSchema);
