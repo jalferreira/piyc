@@ -5,12 +5,12 @@ import {
   deleteEvent,
 } from "../controllers/event.controller.js";
 
-import { protect } from "../middleware/auth.middleware.js";
+import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 router.get("/", getAllEvents);
-router.post("/", protect, createEvent);
-router.delete("/:id", protect, deleteEvent);
+router.post("/", protectRoute, createEvent);
+router.delete("/:id", protectRoute, deleteEvent);
 
 export default router;
