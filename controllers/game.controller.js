@@ -1,11 +1,10 @@
 import Game from "../models/game.model.js";
 import Team from "../models/team.model.js";
 
-
 // Criar jogo
 export const createGame = async (req, res) => {
   try {
-    const { teams } = req.body;
+    const { teams, status } = req.body;
 
     if (!teams || teams.length !== 2) {
       return res
@@ -20,9 +19,19 @@ export const createGame = async (req, res) => {
       return res.status(404).json({ message: "One or more teams not found" });
     }
 
+    // Validar status se fornecido
+    const validStatuses = ["scheduled", "in_progress", "completed"];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({
+        message:
+          "Invalid status. Must be: scheduled, in_progress, or completed",
+      });
+    }
+
     const game = await Game.create({
       teams,
       events: [],
+      status: status || "scheduled",
     });
 
     res.status(201).json(game);
@@ -31,8 +40,6 @@ export const createGame = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 // Listar todos os jogos
 export const getAllGames = async (req, res) => {
@@ -48,8 +55,6 @@ export const getAllGames = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 // Obter jogo por ID
 export const getGameById = async (req, res) => {
@@ -69,12 +74,10 @@ export const getGameById = async (req, res) => {
   }
 };
 
-
-
 // Editar jogo
 export const updateGame = async (req, res) => {
   try {
-    const { teams } = req.body;
+    const { teams, status } = req.body;
 
     const game = await Game.findById(req.params.id);
     if (!game) {
@@ -91,12 +94,22 @@ export const updateGame = async (req, res) => {
       const existingTeams = await Team.find({ _id: { $in: teams } });
 
       if (existingTeams.length !== 2) {
-        return res
-          .status(404)
-          .json({ message: "One or more teams not found" });
+        return res.status(404).json({ message: "One or more teams not found" });
       }
 
       game.teams = teams;
+    }
+
+    // Validar e atualizar status se fornecido
+    if (status) {
+      const validStatuses = ["scheduled", "in_progress", "completed"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          message:
+            "Invalid status. Must be: scheduled, in_progress, or completed",
+        });
+      }
+      game.status = status;
     }
 
     const updatedGame = await game.save();
@@ -107,8 +120,6 @@ export const updateGame = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 // Apagar jogo
 export const deleteGame = async (req, res) => {
