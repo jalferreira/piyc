@@ -3,39 +3,33 @@ import Team from "../models/team.model.js";
 
 export const createGame = async (req, res) => {
   try {
-    const { teams, status, mvp } = req.body;
+    const { teams } = req.body;
 
     if (!teams || teams.length !== 2) {
-      return res
-        .status(400)
-        .json({ message: "Game must have exactly 2 teams" });
+      return res.status(400).json({
+        message: "Game must have exactly 2 teams",
+        received: { teams },
+      });
     }
 
-    const existingTeams = await Team.find({ _id: { $in: teams } });
+    const existingTeams = await Team.find({ name: { $in: teams } });
 
     if (existingTeams.length !== 2) {
       return res.status(404).json({ message: "One or more teams not found" });
     }
 
-    const validStatuses = ["scheduled", "in_progress", "completed"];
-    if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({
-        message:
-          "Invalid status. Must be: scheduled, in_progress, or completed",
-      });
-    }
-
     const game = await Game.create({
-      teams,
+      teams: existingTeams.map((team) => team._id),
       events: [],
-      status: status || "scheduled",
-      mvp: mvp || null,
+      status: "scheduled",
+      mvp: null,
+      result: { homeScore: 0, awayScore: 0 },
     });
 
     res.status(201).json(game);
   } catch (error) {
     console.log("Error in createGame:", error.message);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -45,6 +39,7 @@ export const getAllGames = async (req, res) => {
       .populate("teams", "name country")
       .populate("events")
       .populate("mvp", "name position number")
+      .populate("result")
       .sort({ createdAt: -1 });
 
     res.json({ games });
@@ -59,7 +54,8 @@ export const getGameById = async (req, res) => {
     const game = await Game.findById(req.params.id)
       .populate("teams", "name country")
       .populate("events")
-      .populate("mvp", "name position number");
+      .populate("mvp", "name position number")
+      .populate("result");
 
     if (!game) {
       return res.status(404).json({ message: "Game not found" });
@@ -74,7 +70,7 @@ export const getGameById = async (req, res) => {
 
 export const updateGame = async (req, res) => {
   try {
-    const { teams, status, mvp } = req.body;
+    const { teams, status, mvp, result } = req.body;
 
     const game = await Game.findById(req.params.id);
     if (!game) {
@@ -110,6 +106,10 @@ export const updateGame = async (req, res) => {
 
     if (mvp !== undefined) {
       game.mvp = mvp || null;
+    }
+
+    if (result !== undefined) {
+      game.result = result || {};
     }
 
     const updatedGame = await game.save();

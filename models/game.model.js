@@ -21,6 +21,10 @@ const gameSchema = new mongoose.Schema(
       enum: ["scheduled", "in_progress", "completed"],
       default: "scheduled",
     },
+    result: {
+      homeScore: { type: Number, default: 0, required: false },
+      awayScore: { type: Number, default: 0, required: false },
+    },
     mvp: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Player",
