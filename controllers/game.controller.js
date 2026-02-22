@@ -1,10 +1,9 @@
 import Game from "../models/game.model.js";
 import Team from "../models/team.model.js";
 
-// Criar jogo
 export const createGame = async (req, res) => {
   try {
-    const { teams, status } = req.body;
+    const { teams, status, mvp } = req.body;
 
     if (!teams || teams.length !== 2) {
       return res
@@ -12,14 +11,12 @@ export const createGame = async (req, res) => {
         .json({ message: "Game must have exactly 2 teams" });
     }
 
-    // Verificar se equipas existem
     const existingTeams = await Team.find({ _id: { $in: teams } });
 
     if (existingTeams.length !== 2) {
       return res.status(404).json({ message: "One or more teams not found" });
     }
 
-    // Validar status se fornecido
     const validStatuses = ["scheduled", "in_progress", "completed"];
     if (status && !validStatuses.includes(status)) {
       return res.status(400).json({
@@ -32,6 +29,7 @@ export const createGame = async (req, res) => {
       teams,
       events: [],
       status: status || "scheduled",
+      mvp: mvp || null,
     });
 
     res.status(201).json(game);
@@ -41,12 +39,12 @@ export const createGame = async (req, res) => {
   }
 };
 
-// Listar todos os jogos
 export const getAllGames = async (req, res) => {
   try {
     const games = await Game.find()
       .populate("teams", "name country")
       .populate("events")
+      .populate("mvp", "name position number")
       .sort({ createdAt: -1 });
 
     res.json({ games });
@@ -56,12 +54,12 @@ export const getAllGames = async (req, res) => {
   }
 };
 
-// Obter jogo por ID
 export const getGameById = async (req, res) => {
   try {
     const game = await Game.findById(req.params.id)
       .populate("teams", "name country")
-      .populate("events");
+      .populate("events")
+      .populate("mvp", "name position number");
 
     if (!game) {
       return res.status(404).json({ message: "Game not found" });
@@ -74,10 +72,9 @@ export const getGameById = async (req, res) => {
   }
 };
 
-// Editar jogo
 export const updateGame = async (req, res) => {
   try {
-    const { teams, status } = req.body;
+    const { teams, status, mvp } = req.body;
 
     const game = await Game.findById(req.params.id);
     if (!game) {
@@ -100,7 +97,6 @@ export const updateGame = async (req, res) => {
       game.teams = teams;
     }
 
-    // Validar e atualizar status se fornecido
     if (status) {
       const validStatuses = ["scheduled", "in_progress", "completed"];
       if (!validStatuses.includes(status)) {
@@ -112,6 +108,10 @@ export const updateGame = async (req, res) => {
       game.status = status;
     }
 
+    if (mvp !== undefined) {
+      game.mvp = mvp || null;
+    }
+
     const updatedGame = await game.save();
 
     res.json(updatedGame);
@@ -121,7 +121,6 @@ export const updateGame = async (req, res) => {
   }
 };
 
-// Apagar jogo
 export const deleteGame = async (req, res) => {
   try {
     const game = await Game.findById(req.params.id);

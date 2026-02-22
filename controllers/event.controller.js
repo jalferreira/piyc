@@ -8,7 +8,7 @@ export const createEvent = async (req, res) => {
   try {
     const { type, time, player, team, game } = req.body;
 
-    if (!type || time === undefined || !player || !team || !game) {
+    if (!type || !time || !player || !team || !game) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -37,12 +37,8 @@ export const createEvent = async (req, res) => {
     });
 
     // Associar evento ao jogo
-    existingGame.events.push(event._id);
+    existingGame.events.push(event);
     await existingGame.save();
-
-    //  Associar evento ao jogador
-    existingPlayer.events.push(event._id);
-    await existingPlayer.save();
 
     res.status(201).json(event);
   } catch (error) {
@@ -50,8 +46,6 @@ export const createEvent = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 //  Listar todos os eventos
 export const getAllEvents = async (req, res) => {
@@ -68,8 +62,6 @@ export const getAllEvents = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 //  Obter evento por ID
 export const getEventById = async (req, res) => {
@@ -90,8 +82,6 @@ export const getEventById = async (req, res) => {
   }
 };
 
-
-
 // Atualizar evento
 export const updateEvent = async (req, res) => {
   try {
@@ -102,8 +92,8 @@ export const updateEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    if (type !== undefined) event.type = type;
-    if (time !== undefined) event.time = time;
+    if (type) event.type = type;
+    if (time) event.time = time;
 
     const updatedEvent = await event.save();
 
@@ -113,8 +103,6 @@ export const updateEvent = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 //  Apagar evento
 export const deleteEvent = async (req, res) => {
@@ -127,11 +115,6 @@ export const deleteEvent = async (req, res) => {
 
     // Remover do jogo
     await Game.findByIdAndUpdate(event.game, {
-      $pull: { events: event._id },
-    });
-
-    // Remover do jogador
-    await Player.findByIdAndUpdate(event.player, {
       $pull: { events: event._id },
     });
 

@@ -13,20 +13,12 @@ const playerSchema = new mongoose.Schema(
     position: {
       type: String,
       enum: ["guarda-redes", "defesa", "medio", "avancado"],
-      default: "user",
       required: true,
     },
     number: {
       type: Number,
       required: true,
     },
-    events: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Event",
-        required: true,
-      },
-    ],
   },
   { timestamps: true },
 );

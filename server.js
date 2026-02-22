@@ -7,7 +7,7 @@ import authRoutes from "./routes/auth.route.js";
 import teamRoutes from "./routes/team.route.js";
 import eventRoutes from "./routes/event.route.js";
 import gameRoutes from "./routes/game.route.js";
-import standingsRoutes from "./routes/standings.route.js";
+import playerRoutes from "./routes/player.route.js";
 
 import { connectDB } from "./lib/db.js";
 
@@ -15,6 +15,10 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(cookieParser());
 
 const allowedOrigins = [
   "*",
@@ -43,14 +47,12 @@ app.options("*", (req, res) => {
 });
 
 app.use("/uploads", express.static("public/uploads"));
-app.use(express.json({ limit: "10mb" }));
-app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/events", eventRoutes);
-app.use("/api/standings", standingsRoutes);
 app.use("/api/games", gameRoutes);
+app.use("/api/players", playerRoutes);
 
 connectDB();
 

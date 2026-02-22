@@ -21,6 +21,11 @@ const gameSchema = new mongoose.Schema(
       enum: ["scheduled", "in_progress", "completed"],
       default: "scheduled",
     },
+    mvp: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Player",
+      required: false,
+    },
   },
   { timestamps: true },
 );
