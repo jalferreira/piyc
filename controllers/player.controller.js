@@ -68,6 +68,94 @@ export const getAllPlayers = async (req, res) => {
   }
 };
 
+export const getTopScorer = async (req, res) => {
+  try {
+    const event = await Event.find({ type: "goal" }).populate(
+      "player",
+      "name position number",
+    );
+    const scorerCount = {};
+
+    if (event.length === 0) {
+      return res.status(404).json({ message: "No goals scored yet" });
+    }
+
+    event.forEach((e) => {
+      const playerId = e.player._id.toString();
+      if (!scorerCount[playerId]) {
+        scorerCount[playerId] = { player: e.player, goals: 0 };
+      }
+      scorerCount[playerId].goals += 1;
+    });
+
+    const topScorer = Object.values(scorerCount).sort(
+      (a, b) => b.goals - a.goals,
+    )[0];
+
+    if (!topScorer) {
+      return res.status(404).json({ message: "No goals scored yet" });
+    }
+    res.json({ topScorer: topScorer.player, goals: topScorer.goals });
+  } catch (error) {
+    console.log("Error in getTopScorer:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getTopMVP = async (req, res) => {
+  try {
+    const games = await Game.find().populate("mvp", "name position number");
+    const mvpCount = {};
+
+    games.forEach((game) => {
+      if (game.mvp) {
+        const playerId = game.mvp._id.toString();
+        if (!mvpCount[playerId]) {
+          mvpCount[playerId] = { player: game.mvp, mvps: 0 };
+        }
+        mvpCount[playerId].mvps += 1;
+      }
+    });
+
+    const topMVP = Object.values(mvpCount).sort((a, b) => b.mvps - a.mvps)[0];
+
+    if (!topMVP) {
+      return res.status(404).json({ message: "No MVPs awarded yet" });
+    }
+    res.json({ topMVP: topMVP.player, mvps: topMVP.mvps });
+  } catch (error) {
+    console.log("Error in getTopMVP:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getPlayersByTeam = async (req, res) => {
+  try {
+    const team = await Team.findOne({ name: req.params.teamName }).populate(
+      "players",
+    );
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    const positionOrder = {
+      "guarda-redes": 1,
+      defesa: 2,
+      medio: 3,
+      avancado: 4,
+    };
+
+    const sortedPlayers = team.players.sort(
+      (a, b) => positionOrder[a.position] - positionOrder[b.position],
+    );
+
+    res.json({ players: sortedPlayers });
+  } catch (error) {
+    console.log("Error in getPlayersByTeam:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // Obter jogador por ID
 export const getPlayerById = async (req, res) => {
   try {
