@@ -1,5 +1,7 @@
 import Player from "../models/player.model.js";
 import Team from "../models/team.model.js";
+import Event from "../models/event.model.js";
+import Game from "../models/game.model.js";
 
 // Criar jogador
 export const createPlayer = async (req, res) => {
@@ -32,6 +34,7 @@ export const createPlayer = async (req, res) => {
       name,
       position,
       number,
+      team: existingTeam._id,
     }).then(async (newPlayer) => {
       existingTeam.players.push(newPlayer);
       await existingTeam.save();
@@ -70,7 +73,7 @@ export const getAllPlayers = async (req, res) => {
 
 export const getTopScorer = async (req, res) => {
   try {
-    const event = await Event.find({ type: "goal" }).populate(
+    const event = await Event.find({ type: "golo" }).populate(
       "player",
       "name position number",
     );
@@ -90,12 +93,12 @@ export const getTopScorer = async (req, res) => {
 
     const topScorer = Object.values(scorerCount).sort(
       (a, b) => b.goals - a.goals,
-    )[0];
+    );
 
     if (!topScorer) {
       return res.status(404).json({ message: "No goals scored yet" });
     }
-    res.json({ topScorer: topScorer.player, goals: topScorer.goals });
+    res.json({ topScorers: topScorer });
   } catch (error) {
     console.log("Error in getTopScorer:", error.message);
     res.status(500).json({ message: "Server error" });
@@ -117,12 +120,13 @@ export const getTopMVP = async (req, res) => {
       }
     });
 
-    const topMVP = Object.values(mvpCount).sort((a, b) => b.mvps - a.mvps)[0];
+    const sortedMvps = Object.values(mvpCount).sort((a, b) => b.mvps - a.mvps);
 
-    if (!topMVP) {
+    if (sortedMvps.length === 0) {
       return res.status(404).json({ message: "No MVPs awarded yet" });
     }
-    res.json({ topMVP: topMVP.player, mvps: topMVP.mvps });
+
+    res.status(200).json({ mvps: sortedMvps });
   } catch (error) {
     console.log("Error in getTopMVP:", error.message);
     res.status(500).json({ message: "Server error" });
@@ -131,7 +135,7 @@ export const getTopMVP = async (req, res) => {
 
 export const getPlayersByTeam = async (req, res) => {
   try {
-    const team = await Team.findOne({ name: req.params.teamName }).populate(
+    const team = await Team.findOne({ name: req.body.teamName }).populate(
       "players",
     );
     if (!team) {
@@ -149,7 +153,7 @@ export const getPlayersByTeam = async (req, res) => {
       (a, b) => positionOrder[a.position] - positionOrder[b.position],
     );
 
-    res.json({ players: sortedPlayers });
+    res.status(200).json({ players: sortedPlayers });
   } catch (error) {
     console.log("Error in getPlayersByTeam:", error.message);
     res.status(500).json({ message: "Server error" });
@@ -175,7 +179,7 @@ export const getPlayerById = async (req, res) => {
 // Editar jogador
 export const updatePlayer = async (req, res) => {
   try {
-    const { name, position, number } = req.body;
+    const { name, position, number, team } = req.body;
 
     const player = await Player.findById(req.params.id);
     if (!player) {
@@ -185,6 +189,13 @@ export const updatePlayer = async (req, res) => {
     if (name !== undefined) player.name = name;
     if (position !== undefined) player.position = position;
     if (number !== undefined) player.number = number;
+    if (team !== undefined) {
+      team = await Team.findOne({ name: team });
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      player.team = team._id;
+    }
 
     const updatedPlayer = await player.save();
 
@@ -205,6 +216,10 @@ export const deletePlayer = async (req, res) => {
     }
 
     await Player.findByIdAndDelete(req.params.id);
+    await Event.deleteMany({ player: req.params.id });
+    await Team.findByIdAndUpdate(player.team, {
+      $pull: { players: player._id },
+    });
 
     res.json({ message: "Player deleted successfully" });
   } catch (error) {

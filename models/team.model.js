@@ -20,6 +20,11 @@ const teamSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    group: {
+      type: String,
+      required: false,
+      default: null,
+    },
   },
   { timestamps: true },
 );

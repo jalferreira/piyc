@@ -1,5 +1,6 @@
 import Game from "../models/game.model.js";
 import Team from "../models/team.model.js";
+import Event from "../models/event.model.js";
 
 export const createGame = async (req, res) => {
   try {
@@ -8,6 +9,13 @@ export const createGame = async (req, res) => {
     if (!teams || teams.length !== 2) {
       return res.status(400).json({
         message: "Game must have exactly 2 teams",
+        received: { teams },
+      });
+    }
+
+    if (teams[0].group !== teams[1].group) {
+      return res.status(400).json({
+        message: "Both teams must be in the same group",
         received: { teams },
       });
     }
@@ -30,6 +38,44 @@ export const createGame = async (req, res) => {
   } catch (error) {
     console.log("Error in createGame:", error.message);
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateGoals = async (req, res) => {
+  try {
+    const game = await Game.findById(req.params.id).populate("events");
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    let homeScore = 0;
+    let awayScore = 0;
+
+    const goals = game.events.filter(
+      (event) => event.type === "golo" || event.type === "autogolo",
+    );
+
+    goals.forEach((goal) => {
+      if (goal.type === "golo") {
+        if (goal.team.toString() === game.teams[0].toString()) {
+          homeScore++;
+        } else if (goal.team.toString() === game.teams[1].toString()) {
+          awayScore++;
+        }
+      } else if (goal.type === "autogolo") {
+        if (goal.team.toString() === game.teams[0].toString()) {
+          awayScore++;
+        } else if (goal.team.toString() === game.teams[1].toString()) {
+          homeScore++;
+        }
+      }
+    });
+
+    game.result = { homeScore, awayScore };
+    await game.save();
+    res.json(game);
+  } catch (error) {
+    console.log("Error in updateGoals:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -105,11 +151,25 @@ export const updateGame = async (req, res) => {
     }
 
     if (mvp !== undefined) {
+      if (mvp) {
+        const teamsWithPlayers = await Team.find({
+          _id: { $in: game.teams },
+        }).populate("players", "_id");
+
+        const playerExists = teamsWithPlayers.some((team) =>
+          team.players.some((player) => player._id.toString() === mvp),
+        );
+
+        if (!playerExists) {
+          return res.status(404).json({ message: "MVP player not found" });
+        }
+      }
+
       game.mvp = mvp || null;
     }
 
     if (result !== undefined) {
-      game.result = result || {};
+      game.result = result || updateGoals(req, res);
     }
 
     const updatedGame = await game.save();
@@ -127,6 +187,10 @@ export const deleteGame = async (req, res) => {
 
     if (!game) {
       return res.status(404).json({ message: "Game not found" });
+    }
+
+    if (game.events && game.events.length > 0) {
+      await Event.deleteMany({ game: req.params.id });
     }
 
     await Game.findByIdAndDelete(req.params.id);

@@ -8,6 +8,8 @@ import teamRoutes from "./routes/team.route.js";
 import eventRoutes from "./routes/event.route.js";
 import gameRoutes from "./routes/game.route.js";
 import playerRoutes from "./routes/player.route.js";
+import standingRoutes from "./routes/standings.route.js";
+import fixtureRoutes from "./routes/fixtures.route.js";
 
 import { connectDB } from "./lib/db.js";
 
@@ -53,6 +55,8 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/games", gameRoutes);
 app.use("/api/players", playerRoutes);
+app.use("/api/standings", standingRoutes);
+app.use("/api/fixtures", fixtureRoutes);
 
 connectDB();
 

@@ -21,6 +21,11 @@ const eventSchema = new mongoose.Schema(
       ref: "Team",
       required: true,
     },
+    game: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Game",
+      required: true,
+    },
   },
   { timestamps: true },
 );

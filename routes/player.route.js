@@ -15,11 +15,11 @@ const router = express.Router();
 
 router.get("/", getAllPlayers);
 router.post("/", createPlayer);
-router.put("/:id", updatePlayer);
-router.get("/:id", getPlayerById);
-router.get("/", getPlayersByTeam);
 router.get("/topScorer", getTopScorer);
 router.get("/topMVP", getTopMVP);
+router.get("/byTeam", getPlayersByTeam);
+router.put("/:id", updatePlayer);
+router.get("/:id", getPlayerById);
 router.delete("/:id", deletePlayer);
 
 export default router;

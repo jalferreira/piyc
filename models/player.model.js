@@ -19,6 +19,11 @@ const playerSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    team: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Team",
+      required: true,
+    },
   },
   { timestamps: true },
 );
