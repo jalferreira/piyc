@@ -13,13 +13,6 @@ export const createGame = async (req, res) => {
       });
     }
 
-    if (teams[0].group !== teams[1].group) {
-      return res.status(400).json({
-        message: "Both teams must be in the same group",
-        received: { teams },
-      });
-    }
-
     const existingTeams = await Team.find({ name: { $in: teams } });
 
     if (existingTeams.length !== 2) {
