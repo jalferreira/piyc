@@ -23,9 +23,10 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 
 const allowedOrigins = [
-  "*",
-  "https://www.lgspintercontinentalyouthcup.com",
-  "https://lgspintercontinentalyouthcup.com/",
+  'http://127.0.0.1:5500',
+  'http://localhost:5500',
+  'https://lgspintercontinentalyouthcup.com',
+  'https://www.lgspintercontinentalyouthcup.com',
 ];
 
 app.use(
