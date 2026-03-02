@@ -2,12 +2,9 @@ import Team from "../models/team.model.js";
 import Player from "../models/player.model.js";
 import Event from "../models/event.model.js";
 
-// Multer and file-system logic removed; frontend will manage image storage
-
 export const getAllTeams = async (req, res) => {
   try {
     const teams = await Team.find();
-    // images are stored as whatever the client supplied (could be full URL)
     res.status(200).json({ teams });
   } catch (error) {
     console.log("Error in getAllTeams controller", error.message);
