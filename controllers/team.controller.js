@@ -2,16 +2,12 @@ import Team from "../models/team.model.js";
 import Player from "../models/player.model.js";
 import Event from "../models/event.model.js";
 
-import { deleteFile } from "../lib/multer.js";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Multer and file-system logic removed; frontend will manage image storage
 
 export const getAllTeams = async (req, res) => {
   try {
     const teams = await Team.find();
+    // images are stored as whatever the client supplied (could be full URL)
     res.status(200).json({ teams });
   } catch (error) {
     console.log("Error in getAllTeams controller", error.message);
@@ -34,26 +30,18 @@ export const getTeamById = async (req, res) => {
 
 export const createTeam = async (req, res) => {
   try {
-    const { players, name, country, group } = req.body;
-    let imageUrl = "";
-
-    if (req.file) {
-      imageUrl = `/uploads/teams/${req.file.filename}`;
-    }
+    const { players, name, country, group, image } = req.body;
 
     const team = await Team.create({
       name,
       country,
       players: players || [],
-      image: imageUrl,
+      image: image || "",
       group: group || null,
     });
 
     res.status(201).json(team);
   } catch (error) {
-    if (req.file) {
-      deleteFile(req.file.path);
-    }
     console.log("Error in createTeam controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -63,18 +51,6 @@ export const deleteTeam = async (req, res) => {
   try {
     const team = await Team.findById(req.params.id);
     if (!team) return res.status(404).json({ message: "Team not found" });
-
-    if (team.image) {
-      try {
-        const filePath = path.join(
-          __dirname,
-          "..",
-          "public",
-          team.image.replace(/^\//, ""),
-        );
-        deleteFile(filePath);
-      } catch (e) {}
-    }
 
     await Team.findByIdAndDelete(req.params.id);
     await Player.deleteMany({ team: req.params.id });
@@ -98,27 +74,13 @@ export const editTeam = async (req, res) => {
     if (players !== undefined) team.players = players;
     if (group !== undefined) team.group = group;
 
-    if (req.file) {
-      if (team.image) {
-        try {
-          const filePath = path.join(
-            __dirname,
-            "..",
-            "public",
-            team.image.replace(/^\//, ""),
-          );
-          deleteFile(filePath);
-        } catch (e) {}
-      }
-      team.image = `/uploads/teams/${req.file.filename}`;
+    if (req.body.image !== undefined) {
+      team.image = req.body.image;
     }
 
     const updatedTeam = await team.save();
     res.json(updatedTeam);
   } catch (error) {
-    if (req.file) {
-      deleteFile(req.file.path);
-    }
     console.log("Error in editTeam controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
