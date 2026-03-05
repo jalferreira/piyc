@@ -4,8 +4,8 @@ import Event from "../models/event.model.js";
 
 export const getAllTeams = async (req, res) => {
   try {
-    const teams = await Team.find();
-    res.status(200).json({ teams }).populate("players");
+    const teams = await Team.find().populate("players");
+    res.status(200).json({ teams });
   } catch (error) {
     console.log("Error in getAllTeams controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
