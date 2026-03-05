@@ -23,10 +23,10 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 
 const allowedOrigins = [
-  'http://127.0.0.1:5500',
-  'http://localhost:5500',
-  'https://lgspintercontinentalyouthcup.com',
-  'https://www.lgspintercontinentalyouthcup.com',
+  "http://127.0.0.1:5500",
+  "http://localhost:5500",
+  "https://lgspintercontinentalyouthcup.com",
+  "https://www.lgspintercontinentalyouthcup.com",
 ];
 
 app.use(
@@ -48,8 +48,6 @@ app.use(
 app.options("*", (req, res) => {
   res.sendStatus(200);
 });
-
-app.use("/uploads", express.static("public/uploads"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/teams", teamRoutes);
