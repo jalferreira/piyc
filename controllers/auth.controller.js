@@ -26,7 +26,7 @@ const storeRefreshToken = async (userId, refreshToken) => {
 };
 
 export const signup = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
   try {
     const userExists = await User.findOne({ email });
 
@@ -35,7 +35,7 @@ export const signup = async (req, res) => {
         message: "Utilizador já existe. Por favor faça reset da password.",
       });
     }
-    const user = await User.create({ email, password });
+    const user = await User.create({ email, password, role: role || "user" });
 
     const { accessToken, refreshToken } = generateTokens(user._id);
     await storeRefreshToken(user._id, refreshToken);
