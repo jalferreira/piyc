@@ -26,7 +26,7 @@ const storeRefreshToken = async (userId, refreshToken) => {
 };
 
 export const signup = async (req, res) => {
-  const { email, password, name } = req.body;
+  const { email, password } = req.body;
   try {
     const userExists = await User.findOne({ email });
 
@@ -35,7 +35,7 @@ export const signup = async (req, res) => {
         message: "Utilizador já existe. Por favor faça reset da password.",
       });
     }
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ email, password });
 
     const { accessToken, refreshToken } = generateTokens(user._id);
     await storeRefreshToken(user._id, refreshToken);
@@ -44,7 +44,6 @@ export const signup = async (req, res) => {
     return res.status(201).json({
       user: {
         _id: user._id,
-        name: user.name,
         email: user.email,
         role: user.role,
       },
@@ -170,26 +169,6 @@ export const logout = async (req, res) => {
   } catch (error) {
     console.log("Error in logout controller", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-export const getMe = async (req, res) => {
-  try {
-    // Access token no header Authorization
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-
-    const user = await User.findById(decoded.userId).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    res.json(user);
-  } catch (error) {
-    console.log("Error in getMe:", error);
-    res.status(401).json({ message: "Invalid token" });
   }
 };
 

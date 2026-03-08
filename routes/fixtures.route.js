@@ -4,9 +4,11 @@ import {
   generateFinalSchedule,
 } from "../controllers/fixtures.controller.js";
 
+import { protectRoute, adminRoute } from "../middleware/auth.middleware.js";
+
 const router = express.Router();
 
-router.post("/groups", createGroups);
-router.post("/", generateFinalSchedule);
+router.post("/groups", protectRoute, adminRoute, createGroups);
+router.post("/", protectRoute, adminRoute, generateFinalSchedule);
 
 export default router;

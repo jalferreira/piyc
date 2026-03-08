@@ -6,7 +6,7 @@ import Game from "../models/game.model.js";
 // Criar jogador
 export const createPlayer = async (req, res) => {
   try {
-    const { name, position, number, team } = req.body;
+    const { name, position, number, image, team } = req.body;
 
     if (!name || !position || !number || !team) {
       return res.status(400).json({
@@ -34,6 +34,7 @@ export const createPlayer = async (req, res) => {
       name,
       position,
       number,
+      image: image || "",
       team: existingTeam._id,
     }).then(async (newPlayer) => {
       existingTeam.players.push(newPlayer);
@@ -179,7 +180,7 @@ export const getPlayerById = async (req, res) => {
 // Editar jogador
 export const updatePlayer = async (req, res) => {
   try {
-    const { name, position, number, team } = req.body;
+    const { name, position, number, image, team } = req.body;
 
     const player = await Player.findById(req.params.id);
     if (!player) {
@@ -189,6 +190,7 @@ export const updatePlayer = async (req, res) => {
     if (name !== undefined) player.name = name;
     if (position !== undefined) player.position = position;
     if (number !== undefined) player.number = number;
+    if (number !== undefined) player.image = image;
     if (team !== undefined) {
       team = await Team.findOne({ name: team });
       if (!team) {
