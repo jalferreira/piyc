@@ -1,9 +1,6 @@
 import { redis } from "../lib/redis.js";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
-import sgMail from "@sendgrid/mail";
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Gera access e refresh tokens
 const generateTokens = (userId) => {
@@ -38,9 +35,13 @@ export const signup = async (req, res) => {
     const user = await User.create({ email, password, role: role || "user" });
 
     const { accessToken, refreshToken } = generateTokens(user._id);
-    await storeRefreshToken(user._id, refreshToken);
 
-    // devolve tokens no body
+    try {
+      await storeRefreshToken(user._id, refreshToken);
+    } catch (redisError) {
+      console.error("Redis error in signup:", redisError.message);
+    }
+
     return res.status(201).json({
       user: {
         _id: user._id,
@@ -63,12 +64,16 @@ export const login = async (req, res) => {
 
     if (user && (await user.comparePassword(password))) {
       const { accessToken, refreshToken } = generateTokens(user._id);
-      await storeRefreshToken(user._id, refreshToken);
+
+      try {
+        await storeRefreshToken(user._id, refreshToken);
+      } catch (redisError) {
+        console.error("Redis error in login:", redisError.message);
+      }
 
       res.json({
         user: {
           _id: user._id,
-          name: user.name,
           email: user.email,
           role: user.role,
         },
@@ -106,45 +111,15 @@ export const resetPassword = async (req, res) => {
     // Atualiza password no banco
     user.password = randomPassword;
     try {
-      await user.save(); // hash feito pelo pre-save hook
+      await user.save();
       console.log("Senha atualizada no banco com sucesso");
     } catch (saveError) {
       console.error("Erro ao salvar usuário:", saveError);
       return res.status(500).json({ message: "Erro ao atualizar senha" });
     }
 
-    // Monta email usando SendGrid
-    const msg = {
-      to: user.email,
-      from: process.env.SENDGRID_FROM_EMAIL, // remetente validado no SendGrid
-      subject: "Reset da password",
-      html: `
-        <p>Olá colega,<br>
-        A sua nova password é: <b>${randomPassword}</b><br>
-        Por favor altere-a após login.<br><br>
-        <p>Obrigado desde já.<br><br>
-        Melhores Cumprimentos | Best Regards,<br>
-        _____________________________________<br>
-        LGSP - IT Team <br>
-        Lufthansa Ground Services Portugal - LGSP <br>
-        Av. da Boavista, 1837, sala 13.4 <br>
-        4100-133 Porto – Portugal <br>
-        Tel: +351 964 530 986 <br>
-        Email: lgsp.it@dlh.de <br>
-        www.lufthansa-lgsp.com</p>
-      `,
-    };
-
-    try {
-      await sgMail.send(msg);
-      console.log("Email enviado com sucesso para:", user.email);
-    } catch (sendError) {
-      console.error("Erro ao enviar email via SendGrid:", sendError);
-      // não retorna erro ao frontend — apenas loga
-    }
-
     return res.status(200).json({
-      message: "Nova password gerada e atualizada. Verifique seu email.",
+      message: `Nova password gerada e atualizada. ${randomPassword}`,
     });
   } catch (error) {
     console.error("Erro geral no resetPassword:", error);
@@ -158,11 +133,16 @@ export const logout = async (req, res) => {
   try {
     const { refreshToken } = req.body; // agora esperamos no body
     if (refreshToken) {
-      const decoded = jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET,
-      );
-      await redis.del(`refresh_token:${decoded.userId}`);
+      try {
+        const decoded = jwt.verify(
+          refreshToken,
+          process.env.REFRESH_TOKEN_SECRET,
+        );
+        await redis.del(`refresh_token:${decoded.userId}`);
+      } catch (redisError) {
+        console.error("Redis error in logout:", redisError.message);
+        // Continue mesmo se Redis falhar
+      }
     }
 
     res.json({ message: "Logged out successfully" });
@@ -180,7 +160,15 @@ export const refreshToken = async (req, res) => {
     }
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const storedToken = await redis.get(`refresh_token:${decoded.userId}`);
+    let storedToken;
+
+    try {
+      storedToken = await redis.get(`refresh_token:${decoded.userId}`);
+    } catch (redisError) {
+      console.error("Redis error in refreshToken:", redisError.message);
+      // Se Redis falhar, considerar token como válido se JWT é válido
+      storedToken = refreshToken;
+    }
 
     if (storedToken !== refreshToken) {
       return res.status(401).json({ message: "Invalid refresh token" });
@@ -198,7 +186,11 @@ export const refreshToken = async (req, res) => {
       { expiresIn: "7d" },
     );
 
-    await storeRefreshToken(decoded.userId, newRefreshToken);
+    try {
+      await storeRefreshToken(decoded.userId, newRefreshToken);
+    } catch (redisError) {
+      console.error("Redis error storing new token:", redisError.message);
+    }
 
     res.json({
       accessToken: newAccessToken,
@@ -233,6 +225,9 @@ export const changePassword = async (req, res) => {
 
     res.json({ message: "Password alterada com sucesso!" });
   } catch (error) {
-    res.status(500).json({ message: "Erro ao alterar password" });
+    console.error("Error in changePassword:", error.message);
+    res
+      .status(500)
+      .json({ message: "Erro ao alterar password: " + error.message });
   }
 };

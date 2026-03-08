@@ -12,8 +12,8 @@ const router = express.Router();
 
 router.get("/", getAllTeams);
 router.get("/:id", getTeamById);
-router.post("/", protectRoute, createTeam);
-router.put("/:id", protectRoute, editTeam);
-router.delete("/:id", protectRoute, adminRoute, deleteTeam);
+router.post("/", /* protectRoute, */ createTeam);
+router.put("/:id", /* protectRoute, */ editTeam);
+router.delete("/:id", /* protectRoute, adminRoute, */ deleteTeam);
 
 export default router;
