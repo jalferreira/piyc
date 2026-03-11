@@ -11,8 +11,8 @@ import { protectRoute, adminRoute } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 router.get("/", getAllEvents);
-router.post("/", /* protectRoute, */ createEvent);
+router.post("/", protectRoute, createEvent);
 router.get("/:id", getEventById);
-router.delete("/:id", /* protectRoute, adminRoute, */ deleteEvent);
+router.delete("/:id", protectRoute, adminRoute, deleteEvent);
 
 export default router;

@@ -13,8 +13,8 @@ const router = express.Router();
 
 router.get("/", getAllGames);
 router.get("/:id", getGameById);
-router.post("/", /* protectRoute, */ createGame);
-router.put("/:id", /* protectRoute, */ updateGame);
-router.delete("/:id", /* protectRoute, adminRoute,  */ deleteGame);
+router.post("/", protectRoute, createGame);
+router.put("/:id", protectRoute, updateGame);
+router.delete("/:id", protectRoute, adminRoute, deleteGame);
 
 export default router;
