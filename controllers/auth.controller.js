@@ -72,6 +72,7 @@ export const login = async (req, res) => {
       }
 
       res.json({
+        message: "login done!",
         user: {
           _id: user._id,
           email: user.email,
@@ -106,9 +107,7 @@ export const resetPassword = async (req, res) => {
 
     // Gera nova senha aleatória
     const randomPassword = Math.random().toString(36).slice(-8);
-    console.log("Nova senha gerada:", randomPassword);
 
-    // Atualiza password no banco
     user.password = randomPassword;
     try {
       await user.save();
@@ -119,7 +118,7 @@ export const resetPassword = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: `Nova password gerada e atualizada. ${randomPassword}`,
+      message: `Password resetada com sucesso. ${user.password}`,
     });
   } catch (error) {
     console.error("Erro geral no resetPassword:", error);
@@ -131,18 +130,26 @@ export const resetPassword = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    const { refreshToken } = req.body; // agora esperamos no body
-    if (refreshToken) {
-      try {
-        const decoded = jwt.verify(
-          refreshToken,
-          process.env.REFRESH_TOKEN_SECRET,
-        );
-        await redis.del(`refresh_token:${decoded.userId}`);
-      } catch (redisError) {
-        console.error("Redis error in logout:", redisError.message);
-        // Continue mesmo se Redis falhar
-      }
+    // Verificar autenticação obrigatória
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized - No token" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    } catch (error) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+
+    // Remover refresh token do Redis
+    try {
+      await redis.del(`refresh_token:${decoded.userId}`);
+    } catch (redisError) {
+      console.error("Redis error in logout:", redisError.message);
+      // Continue mesmo se Redis falhar
     }
 
     res.json({ message: "Logged out successfully" });
