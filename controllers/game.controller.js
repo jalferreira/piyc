@@ -13,7 +13,7 @@ export const createGame = async (req, res) => {
       });
     }
 
-    const existingTeams = await Team.find({ teams });
+    const existingTeams = await Team.find({ _id: { $in: teams } });
 
     if (existingTeams.length !== 2) {
       return res.status(404).json({ message: "One or more teams not found" });
