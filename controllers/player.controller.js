@@ -14,7 +14,7 @@ export const createPlayer = async (req, res) => {
       });
     }
 
-    const existingTeam = await Team.findOne({ name: team }).populate("players");
+    const existingTeam = await Team.findOne({ _id: team }).populate("players");
     if (!existingTeam) {
       return res.status(404).json({ message: "Team not found" });
     }
