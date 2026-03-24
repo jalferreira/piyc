@@ -4,7 +4,7 @@ import Event from "../models/event.model.js";
 
 export const createGame = async (req, res) => {
   try {
-    const { teams } = req.body;
+    const { teams, status, n_jogo } = req.body;
 
     if (!teams || teams.length !== 2) {
       return res.status(400).json({
@@ -22,7 +22,8 @@ export const createGame = async (req, res) => {
     const game = await Game.create({
       teams: existingTeams.map((team) => team._id),
       events: [],
-      status: "scheduled",
+      n_jogo: n_jogo,
+      status: status || "scheduled",
       mvp: null,
       result: { homeScore: 0, awayScore: 0 },
     });
@@ -109,7 +110,7 @@ export const getGameById = async (req, res) => {
 
 export const updateGame = async (req, res) => {
   try {
-    const { teams, status, mvp, result } = req.body;
+    const { teams, status, mvp, n_jogo, result } = req.body;
 
     const game = await Game.findById(req.params.id);
     if (!game) {
@@ -141,6 +142,10 @@ export const updateGame = async (req, res) => {
         });
       }
       game.status = status;
+    }
+
+    if (n_jogo) {
+      game.n_jogo = n_jogo;
     }
 
     if (mvp !== undefined) {
