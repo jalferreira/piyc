@@ -76,9 +76,9 @@ export const updateGoals = async (req, res) => {
 export const getAllGames = async (req, res) => {
   try {
     const games = await Game.find()
-      .populate("teams", "name country")
+      .populate("teams")
       .populate("events")
-      .populate("mvp", "name position number")
+      .populate("mvp")
       .populate("result")
       .sort({ createdAt: -1 });
 
