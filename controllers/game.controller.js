@@ -4,7 +4,7 @@ import Event from "../models/event.model.js";
 
 export const createGame = async (req, res) => {
   try {
-    const { teams, status, n_jogo } = req.body;
+    const { teams, status, n_jogo, date } = req.body;
 
     if (!teams || teams.length !== 2) {
       return res.status(400).json({
@@ -23,6 +23,7 @@ export const createGame = async (req, res) => {
       teams: existingTeams.map((team) => team._id),
       events: [],
       n_jogo: n_jogo,
+      date: date || Date.now(),
       status: status || "scheduled",
       mvp: null,
       result: { homeScore: 0, awayScore: 0 },
