@@ -81,7 +81,7 @@ export const getAllGames = async (req, res) => {
       .populate("events")
       .populate("mvp")
       .populate("result")
-      .sort({ createdAt: -1 });
+      .sort({ date: -1 });
 
     res.json({ games });
   } catch (error) {
@@ -111,7 +111,7 @@ export const getGameById = async (req, res) => {
 
 export const updateGame = async (req, res) => {
   try {
-    const { teams, status, mvp, n_jogo, result } = req.body;
+    const { teams, status, mvp, n_jogo, result, date } = req.body;
 
     const game = await Game.findById(req.params.id);
     if (!game) {
@@ -148,6 +148,10 @@ export const updateGame = async (req, res) => {
     if (n_jogo) {
       game.n_jogo = n_jogo;
     }
+    
+    if (date) {
+      game.date = date;
+   } 
 
     if (mvp !== undefined) {
       if (mvp) {
