@@ -16,6 +16,10 @@ const gameSchema = new mongoose.Schema(
         required: true,
       },
     ],
+  date: {
+      type: Date,
+      default: Date.now,
+  },
     status: {
       type: String,
       enum: ["scheduled", "in_progress", "completed"],
