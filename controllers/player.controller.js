@@ -158,7 +158,7 @@ export const getPlayerById = async (req, res) => {
 // Editar jogador
 export const updatePlayer = async (req, res) => {
   try {
-    const { name, number, image, team } = req.body;
+    const { name, number, image, team: teamName } = req.body;
 
     const player = await Player.findById(req.params.id);
     if (!player) {
@@ -167,9 +167,9 @@ export const updatePlayer = async (req, res) => {
 
     if (name !== undefined) player.name = name;
     if (number !== undefined) player.number = number;
-    if (number !== undefined) player.image = image;
-    if (team !== undefined) {
-      team = await Team.findOne({ name: team });
+    if (image !== undefined) player.image = image;
+    if (teamName !== undefined) {
+      const team = await Team.findOne({ name: teamName });
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
@@ -194,11 +194,25 @@ export const deletePlayer = async (req, res) => {
       return res.status(404).json({ message: "Player not found" });
     }
 
-    await Player.findByIdAndDelete(req.params.id);
-    await Event.deleteMany({ player: req.params.id });
+    const eventDocs = await Event.find({ player: player._id }).select("_id");
+    const eventIds = eventDocs.map((event) => event._id);
+
+    await Event.deleteMany({ player: player._id });
+
+    if (eventIds.length > 0) {
+      await Game.updateMany(
+        { events: { $in: eventIds } },
+        { $pull: { events: { $in: eventIds } } },
+      );
+    }
+
+    await Game.updateMany({ mvp: player._id }, { $unset: { mvp: "" } });
+
     await Team.findByIdAndUpdate(player.team, {
       $pull: { players: player._id },
     });
+
+    await Player.findByIdAndDelete(player._id);
 
     res.json({ message: "Player deleted successfully" });
   } catch (error) {
