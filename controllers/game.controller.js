@@ -127,7 +127,7 @@ export const getGameById = async (req, res) => {
       return res.status(404).json({ message: "Game not found" });
     }
 
-    await updateGameResult(game);
+    await Promise.all(updateGameResult(game));
 
     res.json(game);
   } catch (error) {
