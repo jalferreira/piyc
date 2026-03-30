@@ -4,7 +4,7 @@ import Event from "../models/event.model.js";
 
 export const createGame = async (req, res) => {
   try {
-    const { teams, status, n_jogo } = req.body;
+    const { teams, status, n_jogo, date } = req.body;
 
     if (!teams || teams.length !== 2) {
       return res.status(400).json({
@@ -23,6 +23,7 @@ export const createGame = async (req, res) => {
       teams: existingTeams.map((team) => team._id),
       events: [],
       n_jogo: n_jogo,
+      date: date || Date.now(),
       status: status || "scheduled",
       mvp: null,
       result: { homeScore: 0, awayScore: 0 },
@@ -80,7 +81,11 @@ export const getAllGames = async (req, res) => {
       .populate("events")
       .populate("mvp")
       .populate("result")
+<<<<<<< HEAD
       .sort({ n_jogo: 1 });
+=======
+      .sort({ date: -1 });
+>>>>>>> b6a10494069b151dc1565be0680100af6d3370e9
 
     res.json({ games });
   } catch (error) {
@@ -110,7 +115,7 @@ export const getGameById = async (req, res) => {
 
 export const updateGame = async (req, res) => {
   try {
-    const { teams, status, mvp, n_jogo, result } = req.body;
+    const { teams, status, mvp, n_jogo, result, date } = req.body;
 
     const game = await Game.findById(req.params.id);
     if (!game) {
@@ -147,6 +152,10 @@ export const updateGame = async (req, res) => {
     if (n_jogo) {
       game.n_jogo = n_jogo;
     }
+    
+    if (date) {
+      game.date = date;
+   } 
 
     if (mvp !== undefined) {
       if (mvp) {
