@@ -80,7 +80,7 @@ export const getAllGames = async (req, res) => {
       .populate("events")
       .populate("mvp")
       .populate("result")
-      .sort({ createdAt: -1 });
+      .sort({ n_jogo: 1 });
 
     res.json({ games });
   } catch (error) {
