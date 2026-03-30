@@ -5,8 +5,8 @@ export const getGlobalStandings = async (req, res) => {
   try {
     const teams = await Team.find();
     const games = await Game.find({ status: "completed" })
-      .populate("teams", "name")
-      .populate("events", "type team");
+      .populate("teams")
+      .populate("events");
 
     const table = teams.map((team) => ({
       team: team.name,
@@ -90,8 +90,8 @@ export const getStandingsByGroup = async (req, res) => {
   try {
     const teams = await Team.find({ group: req.body.group });
     const games = await Game.find({ status: "completed" })
-      .populate("teams", "name")
-      .populate("events", "type team");
+      .populate("teams")
+      .populate("events");
 
     const table = teams.map((team) => ({
       team: team.name,
@@ -174,9 +174,7 @@ export const getStandingsByGroup = async (req, res) => {
 export const getStandingsByGroupLive = async (req, res) => {
   try {
     const teams = await Team.find({ group: req.body.group });
-    const games = await Game.find()
-      .populate("teams", "name")
-      .populate("events", "type team");
+    const games = await Game.find().populate("teams").populate("events");
 
     const table = teams.map((team) => ({
       team: team.name,
@@ -259,9 +257,7 @@ export const getStandingsByGroupLive = async (req, res) => {
 export const getStandingsLive = async (req, res) => {
   try {
     const teams = await Team.find();
-    const games = await Game.find()
-      .populate("teams", "name")
-      .populate("events", "type team");
+    const games = await Game.find().populate("teams").populate("events");
 
     const table = teams.map((team) => ({
       team: team.name,

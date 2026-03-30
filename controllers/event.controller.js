@@ -19,7 +19,7 @@ export const createEvent = async (req, res) => {
     let existingGame = await Game.findById(game)
       .populate({
         path: "teams",
-        populate: { path: "players", select: "_id" },
+        populate: { path: "players" },
       })
       .populate("events");
 
@@ -75,9 +75,9 @@ export const createEvent = async (req, res) => {
     await existingGame.save();
 
     event = await Event.findById(event._id)
-      .populate("player", "name number")
-      .populate("team", "name")
-      .populate("game", "teams result");
+      .populate("player")
+      .populate("team")
+      .populate("game");
 
     res.status(201).json(event);
   } catch (error) {
@@ -90,8 +90,8 @@ export const createEvent = async (req, res) => {
 export const getAllEvents = async (req, res) => {
   try {
     const events = await Event.find()
-      .populate("player", "name number")
-      .populate("team", "name")
+      .populate("player")
+      .populate("team")
       .populate("game")
       .sort({ time: 1 });
 
@@ -106,8 +106,8 @@ export const getAllEvents = async (req, res) => {
 export const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate("player", "name number")
-      .populate("team", "name")
+      .populate("player")
+      .populate("team")
       .populate("game");
 
     if (!event) {

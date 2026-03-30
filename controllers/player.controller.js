@@ -6,9 +6,9 @@ import Game from "../models/game.model.js";
 // Criar jogador
 export const createPlayer = async (req, res) => {
   try {
-    const { name, position, number, image, team } = req.body;
+    const { name, number, image, team } = req.body;
 
-    if (!name || !position || !number || !team) {
+    if (!name || !number || !team) {
       return res.status(400).json({
         message: "All fields are required",
       });
@@ -32,7 +32,6 @@ export const createPlayer = async (req, res) => {
 
     const player = await Player.create({
       name,
-      position,
       number,
       image: image || "",
       team: existingTeam._id,
@@ -54,16 +53,7 @@ export const getAllPlayers = async (req, res) => {
   try {
     const players = await Player.find();
 
-    const positionOrder = {
-      "guarda-redes": 1,
-      defesa: 2,
-      medio: 3,
-      avancado: 4,
-    };
-
-    const sortedPlayers = players.sort(
-      (a, b) => positionOrder[a.position] - positionOrder[b.position],
-    );
+    const sortedPlayers = players.sort((a, b) => a.number - b.number);
 
     res.json({ players: sortedPlayers });
   } catch (error) {
@@ -74,10 +64,7 @@ export const getAllPlayers = async (req, res) => {
 
 export const getTopScorer = async (req, res) => {
   try {
-    const event = await Event.find({ type: "golo" }).populate(
-      "player",
-      "name position number",
-    );
+    const event = await Event.find({ type: "golo" }).populate("player");
     const scorerCount = {};
 
     if (event.length === 0) {
@@ -108,7 +95,7 @@ export const getTopScorer = async (req, res) => {
 
 export const getTopMVP = async (req, res) => {
   try {
-    const games = await Game.find().populate("mvp", "name position number");
+    const games = await Game.find().populate("mvp");
     const mvpCount = {};
 
     games.forEach((game) => {
@@ -143,16 +130,7 @@ export const getPlayersByTeam = async (req, res) => {
       return res.status(404).json({ message: "Team not found" });
     }
 
-    const positionOrder = {
-      "guarda-redes": 1,
-      defesa: 2,
-      medio: 3,
-      avancado: 4,
-    };
-
-    const sortedPlayers = team.players.sort(
-      (a, b) => positionOrder[a.position] - positionOrder[b.position],
-    );
+    const sortedPlayers = team.players.sort((a, b) => a.number - b.number);
 
     res.status(200).json({ players: sortedPlayers });
   } catch (error) {
@@ -180,7 +158,7 @@ export const getPlayerById = async (req, res) => {
 // Editar jogador
 export const updatePlayer = async (req, res) => {
   try {
-    const { name, position, number, image, team } = req.body;
+    const { name, number, image, team } = req.body;
 
     const player = await Player.findById(req.params.id);
     if (!player) {
@@ -188,7 +166,6 @@ export const updatePlayer = async (req, res) => {
     }
 
     if (name !== undefined) player.name = name;
-    if (position !== undefined) player.position = position;
     if (number !== undefined) player.number = number;
     if (number !== undefined) player.image = image;
     if (team !== undefined) {
