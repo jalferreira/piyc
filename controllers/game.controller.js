@@ -2,6 +2,53 @@ import Game from "../models/game.model.js";
 import Team from "../models/team.model.js";
 import Event from "../models/event.model.js";
 
+const calculateGameResult = (game) => {
+  let homeScore = 0;
+  let awayScore = 0;
+
+  const goals = (game.events || []).filter(
+    (event) => event.type === "golo" || event.type === "autogolo",
+  );
+
+  const firstTeamId = game.teams[0]?.toString();
+  const secondTeamId = game.teams[1]?.toString();
+
+  goals.forEach((goal) => {
+    const goalTeamId = goal.team?.toString();
+
+    if (goal.type === "golo") {
+      if (goalTeamId === firstTeamId) {
+        homeScore++;
+      } else if (goalTeamId === secondTeamId) {
+        awayScore++;
+      }
+    } else if (goal.type === "autogolo") {
+      if (goalTeamId === firstTeamId) {
+        awayScore++;
+      } else if (goalTeamId === secondTeamId) {
+        homeScore++;
+      }
+    }
+  });
+
+  return { homeScore, awayScore };
+};
+
+const updateGameResult = async (game) => {
+  const result = calculateGameResult(game);
+
+  if (
+    !game.result ||
+    game.result.homeScore !== result.homeScore ||
+    game.result.awayScore !== result.awayScore
+  ) {
+    game.result = result;
+    await game.save();
+  }
+
+  return game;
+};
+
 export const createGame = async (req, res) => {
   try {
     const { teams, status, n_jogo, date } = req.body;
@@ -42,32 +89,9 @@ export const updateGoals = async (req, res) => {
     if (!game) {
       return res.status(404).json({ message: "Game not found" });
     }
-    let homeScore = 0;
-    let awayScore = 0;
 
-    const goals = game.events.filter(
-      (event) => event.type === "golo" || event.type === "autogolo",
-    );
-
-    goals.forEach((goal) => {
-      if (goal.type === "golo") {
-        if (goal.team.toString() === game.teams[0].toString()) {
-          homeScore++;
-        } else if (goal.team.toString() === game.teams[1].toString()) {
-          awayScore++;
-        }
-      } else if (goal.type === "autogolo") {
-        if (goal.team.toString() === game.teams[0].toString()) {
-          awayScore++;
-        } else if (goal.team.toString() === game.teams[1].toString()) {
-          homeScore++;
-        }
-      }
-    });
-
-    game.result = { homeScore, awayScore };
-    await game.save();
-    res.json(game);
+    const updatedGame = await updateGameResult(game);
+    res.json(updatedGame);
   } catch (error) {
     console.log("Error in updateGoals:", error.message);
     res.status(500).json({ message: "Server error" });
@@ -80,8 +104,9 @@ export const getAllGames = async (req, res) => {
       .populate("teams")
       .populate("events")
       .populate("mvp")
-      .populate("result")
       .sort({ n_jogo: 1 });
+
+    await Promise.all(games.map((game) => updateGameResult(game)));
 
     res.json({ games });
   } catch (error) {
