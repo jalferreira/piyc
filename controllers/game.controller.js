@@ -89,21 +89,6 @@ export const createGame = async (req, res) => {
   }
 };
 
-export const updateGoals = async (req, res) => {
-  try {
-    const game = await Game.findById(req.params.id).populate("events");
-    if (!game) {
-      return res.status(404).json({ message: "Game not found" });
-    }
-
-    const updatedGame = await updateGameResult(game);
-    res.json(updatedGame);
-  } catch (error) {
-    console.log("Error in updateGoals:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
 export const getAllGames = async (req, res) => {
   try {
     const games = await Game.find()
