@@ -58,7 +58,7 @@ export const updateGameResult = async (game) => {
 
 export const createGame = async (req, res) => {
   try {
-    const { teams, status, n_jogo, date } = req.body;
+    const { teams, status, field, n_jogo, date } = req.body;
 
     if (!teams || teams.length !== 2) {
       return res.status(400).json({
@@ -78,6 +78,7 @@ export const createGame = async (req, res) => {
       events: [],
       n_jogo: n_jogo,
       date: date || Date.now(),
+      field: field || null,
       status: status || "scheduled",
       mvp: null,
       result: { homeScore: 0, awayScore: 0 },
@@ -130,7 +131,7 @@ export const getGameById = async (req, res) => {
 
 export const updateGame = async (req, res) => {
   try {
-    const { teams, status, mvp, n_jogo, result, date } = req.body;
+    const { teams, status, mvp, n_jogo, result, date, field } = req.body;
 
     const game = await Game.findById(req.params.id);
     if (!game) {
@@ -166,6 +167,10 @@ export const updateGame = async (req, res) => {
 
     if (n_jogo) {
       game.n_jogo = n_jogo;
+    }
+
+    if (field) {
+      game.field = field;
     }
 
     if (date) {
