@@ -2,7 +2,7 @@ import Game from "../models/game.model.js";
 import Team from "../models/team.model.js";
 import Event from "../models/event.model.js";
 
-const calculateGameResult = (game) => {
+export const calculateGameResult = (game) => {
   let homeScore = 0;
   let awayScore = 0;
 
@@ -34,7 +34,7 @@ const calculateGameResult = (game) => {
   return { homeScore, awayScore };
 };
 
-const updateGameResult = async (game) => {
+export const updateGameResult = async (game) => {
   const result = calculateGameResult(game);
 
   if (
@@ -199,7 +199,7 @@ export const updateGame = async (req, res) => {
     }
 
     if (result !== undefined) {
-      game.result = result || updateGoals(req, res);
+      game.result = result;
     }
 
     const updatedGame = await game.save();

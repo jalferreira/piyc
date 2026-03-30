@@ -1,5 +1,6 @@
 import Event from "../models/event.model.js";
 import Game from "../models/game.model.js";
+import { updateGameResult } from "./game.controller.js";
 
 // Criar evento
 export const createEvent = async (req, res) => {
@@ -50,28 +51,8 @@ export const createEvent = async (req, res) => {
       game,
     });
 
-    if (type === "golo" || type === "autogolo") {
-      // use _id of populated team objects for comparison
-      const homeId = existingGame.teams[0]._id.toString();
-      const awayId = existingGame.teams[1]._id.toString();
-
-      if (type === "golo") {
-        if (team.toString() === homeId) {
-          existingGame.result.homeScore += 1;
-        } else if (team.toString() === awayId) {
-          existingGame.result.awayScore += 1;
-        }
-      } else if (type === "autogolo") {
-        if (team.toString() === homeId) {
-          existingGame.result.awayScore += 1;
-        } else if (team.toString() === awayId) {
-          existingGame.result.homeScore += 1;
-        }
-      }
-    }
-
     existingGame.events.push(event);
-
+    await updateGameResult(existingGame);
     await existingGame.save();
 
     event = await Event.findById(event._id)
@@ -130,31 +111,16 @@ export const deleteEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    const existingGame = await Game.findById(event.game).populate("teams");
+    const existingGame = await Game.findById(event.game)
+      .populate("teams")
+      .populate("events");
 
-    await Game.findByIdAndUpdate(event.game, {
-      $pull: { events: event._id },
-    });
+    existingGame.events = existingGame.events.filter(
+      (evt) => evt._id.toString() !== event._id.toString(),
+    );
 
-    if (event.type === "golo" || event.type === "autogolo") {
-      const homeId = existingGame.teams[0]._id.toString();
-      const awayId = existingGame.teams[1]._id.toString();
-
-      if (event.type === "golo") {
-        if (event.team.toString() === homeId) {
-          existingGame.result.homeScore -= 1;
-        } else if (event.team.toString() === awayId) {
-          existingGame.result.awayScore -= 1;
-        }
-      } else if (event.type === "autogolo") {
-        if (event.team.toString() === homeId) {
-          existingGame.result.awayScore -= 1;
-        } else if (event.team.toString() === awayId) {
-          existingGame.result.homeScore -= 1;
-        }
-      }
-      await existingGame.save();
-    }
+    await updateGameResult(existingGame);
+    await existingGame.save();
 
     await Event.findByIdAndDelete(req.params.id);
 
