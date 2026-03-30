@@ -1,6 +1,7 @@
 import Game from "../models/game.model.js";
 import Team from "../models/team.model.js";
 import Event from "../models/event.model.js";
+import { resolvePendingFinalGames } from "./fixtures.controller.js";
 
 const normalizeId = (value) => {
   if (!value) return null;
@@ -194,6 +195,10 @@ export const updateGame = async (req, res) => {
     }
 
     const updatedGame = await game.save();
+
+    if (updatedGame.status === "completed") {
+      await resolvePendingFinalGames();
+    }
 
     res.json(updatedGame);
   } catch (error) {

@@ -1,14 +1,45 @@
 import mongoose from "mongoose";
 
+const sourceSchema = new mongoose.Schema(
+  {
+    sourceType: {
+      type: String,
+      enum: ["position", "match"],
+      required: true,
+    },
+    group: {
+      type: String,
+    },
+    place: {
+      type: Number,
+    },
+    matchNumber: {
+      type: Number,
+    },
+    outcome: {
+      type: String,
+      enum: ["winner", "loser"],
+    },
+  },
+  { _id: false },
+);
+
 const gameSchema = new mongoose.Schema(
   {
     teams: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Team",
-        required: true,
       },
     ],
+    homeSource: {
+      type: sourceSchema,
+      required: false,
+    },
+    awaySource: {
+      type: sourceSchema,
+      required: false,
+    },
     events: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -16,10 +47,10 @@ const gameSchema = new mongoose.Schema(
         required: true,
       },
     ],
-  date: {
+    date: {
       type: Date,
       default: Date.now,
-  },
+    },
     status: {
       type: String,
       enum: ["scheduled", "in_progress", "completed"],
