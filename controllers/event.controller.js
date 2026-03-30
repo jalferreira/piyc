@@ -93,7 +93,7 @@ export const getAllEvents = async (req, res) => {
       .populate("player")
       .populate("team")
       .populate("game")
-      .sort({ time: 1 });
+      .sort({ game: 1 });
 
     res.json({ events });
   } catch (error) {
