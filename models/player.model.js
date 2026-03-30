@@ -10,11 +10,6 @@ const playerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-    position: {
-      type: String,
-      enum: ["guarda-redes", "defesa", "medio", "avancado"],
-      required: true,
-    },
     number: {
       type: Number,
       required: true,
