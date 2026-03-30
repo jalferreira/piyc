@@ -10,8 +10,9 @@ export const calculateGameResult = (game) => {
     (event) => event.type === "golo" || event.type === "autogolo",
   );
 
-  const firstTeamId = game.teams[0]?.toString();
-  const secondTeamId = game.teams[1]?.toString();
+  const firstTeamId = game.teams[0]?._id;
+  const secondTeamId = game.teams[1]?._id;
+  console.log(firstTeamId, secondTeamId);
 
   goals.forEach((goal) => {
     const goalTeamId = goal.team?.toString();
