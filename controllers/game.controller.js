@@ -2,6 +2,12 @@ import Game from "../models/game.model.js";
 import Team from "../models/team.model.js";
 import Event from "../models/event.model.js";
 
+const normalizeId = (value) => {
+  if (!value) return null;
+  if (value._id) return value._id.toString();
+  return value.toString();
+};
+
 export const calculateGameResult = (game) => {
   let homeScore = 0;
   let awayScore = 0;
@@ -10,12 +16,11 @@ export const calculateGameResult = (game) => {
     (event) => event.type === "golo" || event.type === "autogolo",
   );
 
-  const firstTeamId = game.teams[0]?._id;
-  const secondTeamId = game.teams[1]?._id;
-  console.log(firstTeamId, secondTeamId);
+  const firstTeamId = normalizeId(game.teams[0]);
+  const secondTeamId = normalizeId(game.teams[1]);
 
   goals.forEach((goal) => {
-    const goalTeamId = goal.team?.toString();
+    const goalTeamId = normalizeId(goal.team);
 
     if (goal.type === "golo") {
       if (goalTeamId === firstTeamId) {
