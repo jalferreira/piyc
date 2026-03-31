@@ -8,7 +8,7 @@ import {
 const getSourceTeamByPosition = (standings, group, place) => {
   const normalizedGroup = normalizeGroupLabel(group);
   const groupStanding = standings[normalizedGroup] || [];
-  return groupStanding[place - 1]?.team || null;
+  return groupStanding[place - 1]?.teamId || null;
 };
 
 const getMatchOutcomeTeam = (sourceGame, outcome) => {
@@ -384,15 +384,17 @@ export const generateFinalSchedule = async (req, res) => {
   try {
     await Game.deleteMany({ n_jogo: { $gte: 41, $lte: 70 } });
 
-    const createdGames = [];
     for (const definition of finalMatchDefinitions) {
-      const created = await Game.create(buildMatchDocument(definition));
-      createdGames.push(created);
+      await Game.create(buildMatchDocument(definition));
     }
 
     await resolvePendingFinalGames();
 
-    res.status(200).json({ games: createdGames });
+    const games = await Game.find({ n_jogo: { $gte: 41, $lte: 70 } })
+      .sort({ n_jogo: 1 })
+      .populate("teams");
+
+    res.status(200).json({ games });
   } catch (error) {
     console.log("Error in generateFinalSchedule:", error.message);
     res.status(500).json({ message: "Server error" });

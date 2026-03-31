@@ -3,6 +3,7 @@ import Game from "../models/game.model.js";
 
 const createStandingsRows = (teams) =>
   teams.map((team) => ({
+    teamId: team._id,
     logo: team.image,
     team: team.name,
     played: 0,

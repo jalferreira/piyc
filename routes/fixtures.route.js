@@ -9,6 +9,6 @@ import { protectRoute, adminRoute } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 router.post("/groups", protectRoute, adminRoute, createGroups);
-router.post("/", protectRoute, adminRoute, generateFinalSchedule);
+router.post("/", generateFinalSchedule);
 
 export default router;
