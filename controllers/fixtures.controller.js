@@ -333,6 +333,22 @@ const buildMatchDocument = (definition) => ({
   awaySource: definition.awaySource,
 });
 
+export const ensureFinalScheduleExists = async () => {
+  const finalCount = await Game.countDocuments({
+    n_jogo: { $gte: 41, $lte: 70 },
+  });
+
+  if (finalCount > 0) return [];
+
+  const createdGames = [];
+  for (const definition of finalMatchDefinitions) {
+    const created = await Game.create(buildMatchDocument(definition));
+    createdGames.push(created);
+  }
+
+  return createdGames;
+};
+
 export const createGroups = async (req, res) => {
   try {
     const teams = await Team.find();
