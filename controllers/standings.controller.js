@@ -266,7 +266,10 @@ const buildLeaguePlacementRows = (games) => {
 
 export const getFinalStandings = async (req, res) => {
   try {
-    const games = await Game.find({ n_jogo: { $gte: 41, $lte: 70 } })
+    const games = await Game.find({
+      n_jogo: { $gte: 41, $lte: 70 },
+      status: "completed",
+    })
       .sort({ n_jogo: 1 })
       .populate("teams")
       .populate("events");
