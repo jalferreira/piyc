@@ -183,3 +183,121 @@ export const getStandingsLive = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+const finalPlacementMatches = {
+  63: [15, 16],
+  64: [13, 14],
+  65: [11, 12],
+  66: [9, 10],
+  67: [7, 8],
+  68: [5, 6],
+  69: [3, 4],
+  70: [1, 2],
+};
+
+const buildTeamSummary = (team) => ({
+  teamId: team._id?.toString?.(),
+  team: team.name || null,
+  logo: team.image || null,
+});
+
+const buildFinalPositionRows = () =>
+  Array.from({ length: 20 }, (_, idx) => ({
+    position: idx + 1,
+    team: null,
+  }));
+
+const assignMatchPositions = (rows, game) => {
+  const mapping = finalPlacementMatches[game.n_jogo];
+  if (!mapping || game.status !== "completed") return;
+
+  const homeTeam = game.teams[0];
+  const awayTeam = game.teams[1];
+  if (!homeTeam || !awayTeam) return;
+
+  const homeScore = game.result?.homeScore ?? 0;
+  const awayScore = game.result?.awayScore ?? 0;
+  if (homeScore === awayScore) return;
+
+  const winner = homeScore > awayScore ? homeTeam : awayTeam;
+  const loser = homeScore > awayScore ? awayTeam : homeTeam;
+  const [winPosition, losePosition] = mapping;
+
+  rows[winPosition - 1].team = buildTeamSummary(winner);
+  rows[losePosition - 1].team = buildTeamSummary(loser);
+};
+
+const buildLeaguePlacementRows = (games) => {
+  if (!games.length) return [];
+
+  const uniqueTeams = [];
+  const seen = new Set();
+
+  games.forEach((game) => {
+    (game.teams || []).forEach((team) => {
+      if (!team?._id) return;
+      const id = team._id.toString();
+      if (seen.has(id)) return;
+      seen.add(id);
+      uniqueTeams.push(team);
+    });
+  });
+
+  if (!uniqueTeams.length) return [];
+
+  const leagueTable = buildStandingsTable(uniqueTeams, games);
+  return leagueTable.map((row, idx) => ({
+    position: 17 + idx,
+    team: {
+      teamId: row.teamId?.toString?.(),
+      team: row.team,
+      logo: row.logo,
+    },
+    played: row.played,
+    wins: row.wins,
+    draws: row.draws,
+    losses: row.losses,
+    goalsFor: row.goalsFor,
+    goalsAgainst: row.goalsAgainst,
+    goalDifference: row.goalDifference,
+    points: row.points,
+  }));
+};
+
+export const getFinalStandings = async (req, res) => {
+  try {
+    const games = await Game.find({ n_jogo: { $gte: 41, $lte: 70 } })
+      .sort({ n_jogo: 1 })
+      .populate("teams")
+      .populate("events");
+
+    const rows = buildFinalPositionRows();
+
+    games.forEach((game) => {
+      assignMatchPositions(rows, game);
+    });
+
+    const leagueGames = games.filter(
+      (game) => game.n_jogo >= 49 && game.n_jogo <= 54,
+    );
+    const leaguePlacements = buildLeaguePlacementRows(leagueGames);
+    leaguePlacements.forEach((placement) => {
+      rows[placement.position - 1].team = placement.team;
+      rows[placement.position - 1].leagueStats = {
+        played: placement.played,
+        wins: placement.wins,
+        draws: placement.draws,
+        losses: placement.losses,
+        goalsFor: placement.goalsFor,
+        goalsAgainst: placement.goalsAgainst,
+        goalDifference: placement.goalDifference,
+        points: placement.points,
+      };
+    });
+
+    res.status(200).json(rows);
+  } catch (error) {
+    console.log("Error in getStandings:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
