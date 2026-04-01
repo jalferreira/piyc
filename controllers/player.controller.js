@@ -21,7 +21,7 @@ export const createPlayer = async (req, res) => {
 
     // Verificar se já existe um player com esse número ou nome nesta equipa
     const existingPlayer = existingTeam.players.some(
-      (player) => player.number == number || player.name == name,
+      (player) => player.number == number && player.name == name,
     );
 
     if (existingPlayer) {
