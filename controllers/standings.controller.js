@@ -124,8 +124,9 @@ export const getGlobalStandings = async (req, res) => {
       .populate("events");
 
     const table = buildStandingsTable(teams, games);
+    const sortedTable = table.sort({ name: 1 });
 
-    res.status(200).json(table);
+    res.status(200).json(sortedTable);
   } catch (error) {
     console.log("Error in getStandings:", error.message);
     res.status(500).json({ message: "Server error" });

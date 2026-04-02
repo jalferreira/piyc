@@ -95,7 +95,7 @@ export const getTopScorer = async (req, res) => {
 
 export const getTopMVP = async (req, res) => {
   try {
-    const games = await Game.find().populate("mvp");
+    const games = await Game.find().populate("mvp").populate("mvp.team");
     const mvpCount = {};
 
     games.forEach((game) => {

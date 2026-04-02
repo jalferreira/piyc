@@ -100,7 +100,7 @@ export const getAllGames = async (req, res) => {
       .populate("teams")
       .populate("events")
       .populate("mvp")
-      .sort({ n_jogo: 1 });
+      .sort({ date: 1 });
 
     await Promise.all(games.map((game) => updateGameResult(game)));
 
