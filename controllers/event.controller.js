@@ -102,6 +102,95 @@ export const getEventById = async (req, res) => {
   }
 };
 
+export const updateEvent = async (req, res) => {
+  try {
+    const { type, time, player, team, game } = req.body;
+
+    let event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const gameId = game || event.game;
+    let existingGame = await Game.findById(gameId)
+      .populate({
+        path: "teams",
+        populate: { path: "players" },
+      })
+      .populate("events");
+
+    if (!existingGame) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+
+    if (time !== undefined) {
+      if (time < 0 || time > 60) {
+        return res
+          .status(400)
+          .json({ message: "Time must be between 0 and 60 minutes" });
+      }
+      event.time = time;
+    }
+
+    if (type) {
+      const validTypes = ["goal", "yellow_card", "red_card", "penalty"];
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({ message: "Invalid event type" });
+      }
+      event.type = type;
+    }
+
+    if (team) {
+      const teamExists = existingGame.teams.some(
+        (t) => t._id.toString() === team,
+      );
+      if (!teamExists) {
+        return res.status(404).json({ message: "Team not found in this game" });
+      }
+      event.team = team;
+    }
+
+    if (player) {
+      const playerExists = existingGame.teams.some((t) =>
+        t.players.some((p) => p._id.toString() === player),
+      );
+      if (!playerExists) {
+        return res
+          .status(404)
+          .json({ message: "Player not found on any team in this game" });
+      }
+      event.player = player;
+    }
+
+    if (game && game !== event.game.toString()) {
+      event.game = game;
+    }
+
+    await event.save();
+
+    const index = existingGame.events.findIndex(
+      (ev) => ev._id.toString() === event._id.toString(),
+    );
+
+    if (index !== -1) {
+      existingGame.events[index] = event;
+    }
+
+    await updateGameResult(existingGame);
+    await existingGame.save();
+
+    const updatedEvent = await Event.findById(event._id)
+      .populate("player")
+      .populate("team")
+      .populate("game");
+
+    res.json(updatedEvent);
+  } catch (error) {
+    console.log("Error in updateEvent:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 //  Apagar evento
 export const deleteEvent = async (req, res) => {
   try {
