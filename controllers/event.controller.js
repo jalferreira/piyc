@@ -133,10 +133,6 @@ export const updateEvent = async (req, res) => {
     }
 
     if (type) {
-      const validTypes = ["goal", "yellow_card", "red_card", "penalty"];
-      if (!validTypes.includes(type)) {
-        return res.status(400).json({ message: "Invalid event type" });
-      }
       event.type = type;
     }
 
