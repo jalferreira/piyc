@@ -17,7 +17,10 @@ export const calculateGameResult = (game) => {
   let awayScore = 0;
 
   const goals = (game.events || []).filter(
-    (event) => event.type === "golo" || event.type === "autogolo",
+    (event) =>
+      event.type === "golo" ||
+      event.type === "autogolo" ||
+      event.type === "penalty",
   );
 
   const firstTeamId = normalizeId(game.teams[0]);
@@ -37,6 +40,12 @@ export const calculateGameResult = (game) => {
         awayScore++;
       } else if (goalTeamId === secondTeamId) {
         homeScore++;
+      }
+    } else if (goal.type === "penalty") {
+      if (goalTeamId === firstTeamId) {
+        homeScore++;
+      } else if (goalTeamId === secondTeamId) {
+        awayScore++;
       }
     }
   });

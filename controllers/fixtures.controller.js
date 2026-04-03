@@ -62,11 +62,22 @@ const tryResolveGameTeams = (game, standings, gamesByNumber) => {
     }
   }
 
+  if (
+    resolved[0] &&
+    resolved[1] &&
+    resolved[0].toString() === resolved[1].toString()
+  ) {
+    console.warn(
+      `⚠️ Jogo ${game.n_jogo}: mesma equipa atribuída a casa e fora.`,
+    );
+    return { resolved: original, changed: false };
+  }
+
   const changed =
     resolved[0]?.toString() !== original[0]?.toString() ||
     resolved[1]?.toString() !== original[1]?.toString();
 
-  return { resolved: resolved.filter(Boolean), changed };
+  return { resolved, changed };
 };
 
 export const resolvePendingFinalGames = async () => {
