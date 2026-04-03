@@ -133,6 +133,15 @@ export const updateEvent = async (req, res) => {
     }
 
     if (type) {
+      const validTypes = [
+        "cartao amarelo",
+        "cartao vermelho",
+        "golo",
+        "autogolo",
+      ];
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({ message: "Invalid event type" });
+      }
       event.type = type;
     }
 
