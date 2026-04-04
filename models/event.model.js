@@ -4,7 +4,14 @@ const eventSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["cartao amarelo", "cartao vermelho", "golo", "autogolo", "penalty", "penalty falahado"],
+      enum: [
+        "cartao amarelo",
+        "cartao vermelho",
+        "golo",
+        "autogolo",
+        "penalty",
+        "penalty falhado",
+      ],
       required: true,
     },
     time: {
