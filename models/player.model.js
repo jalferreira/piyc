@@ -17,6 +17,10 @@ const playerSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    position: {
+      type: String,
+      required: false,
+    },
     team: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Team",

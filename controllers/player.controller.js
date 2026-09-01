@@ -6,7 +6,7 @@ import Game from "../models/game.model.js";
 // Criar jogador
 export const createPlayer = async (req, res) => {
   try {
-    const { name, number, image, team } = req.body;
+    const { name, number, image, position, team } = req.body;
 
     if (!name || !number || !team) {
       return res.status(400).json({
@@ -34,6 +34,7 @@ export const createPlayer = async (req, res) => {
       name,
       number,
       image: image || "",
+      position: position || "",
       team: existingTeam._id,
     }).then(async (newPlayer) => {
       existingTeam.players.push(newPlayer);
@@ -158,7 +159,7 @@ export const getPlayerById = async (req, res) => {
 // Editar jogador
 export const updatePlayer = async (req, res) => {
   try {
-    const { name, number, image, team: teamName } = req.body;
+    const { name, number, image, position, team: teamId } = req.body;
 
     const player = await Player.findById(req.params.id);
     if (!player) {
@@ -168,8 +169,9 @@ export const updatePlayer = async (req, res) => {
     if (name !== undefined) player.name = name;
     if (number !== undefined) player.number = number;
     if (image !== undefined) player.image = image;
-    if (teamName !== undefined) {
-      const team = await Team.findOne({ name: teamName });
+    if (position !== undefined) player.position = position;
+    if (teamId !== undefined) {
+      const team = await Team.findById(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
