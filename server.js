@@ -27,6 +27,8 @@ const allowedOrigins = [
   "http://localhost:5500",
   "https://lgspintercontinentalyouthcup.com",
   "https://www.lgspintercontinentalyouthcup.com",
+  "https://lgspportocorporateleague.com",
+  "https://www.lgspportocorporateleague.com",
 ];
 
 app.use(
