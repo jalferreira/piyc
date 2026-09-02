@@ -178,7 +178,7 @@ export const getGameById = async (req, res) => {
 
 export const updateGame = async (req, res) => {
   try {
-    const { teams, status, mvp, n_jogo, result, date, field } = req.body;
+    const { teams, status, mvp, n_jogo, result, date, field, lineup } = req.body;
 
     const game = await Game.findById(req.params.id);
     if (!game) {
@@ -245,6 +245,27 @@ export const updateGame = async (req, res) => {
     if (result !== undefined) {
       if (result.homeScore !== undefined) game.result.homeScore = result.homeScore;
       if (result.awayScore !== undefined) game.result.awayScore = result.awayScore;
+    }
+
+    if (lineup !== undefined) {
+      const teamsWithPlayers = await Team.find({
+        _id: { $in: game.teams },
+      }).populate("players");
+
+      const validPlayerIds = new Set(
+        teamsWithPlayers.flatMap((team) =>
+          team.players.map((player) => player._id.toString()),
+        ),
+      );
+
+      const invalidPlayer = lineup.find((id) => !validPlayerIds.has(id));
+      if (invalidPlayer) {
+        return res.status(404).json({
+          message: `Player ${invalidPlayer} does not belong to either team`,
+        });
+      }
+
+      game.lineup = lineup;
     }
 
     const updatedGame = await game.save();

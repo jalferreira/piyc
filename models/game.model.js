@@ -80,6 +80,12 @@ const gameSchema = new mongoose.Schema(
       ref: "Player",
       required: false,
     },
+    lineup: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Player",
+      },
+    ],
   },
   { timestamps: true },
 );
