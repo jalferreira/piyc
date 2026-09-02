@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
+import { requestLogger } from "./middleware/requestLogger.middleware.js";
+
 import authRoutes from "./routes/auth.route.js";
 import teamRoutes from "./routes/team.route.js";
 import eventRoutes from "./routes/event.route.js";
@@ -50,6 +52,8 @@ app.use(
 app.options("*", (req, res) => {
   res.sendStatus(200);
 });
+
+app.use(requestLogger);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/teams", teamRoutes);
