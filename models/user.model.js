@@ -10,15 +10,23 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
     password: {
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters long"],
     },
+
     role: {
       type: String,
       enum: ["gameMaster", "admin"],
       default: "gameMaster",
+    },
+
+    // Guarda o hash do refresh token
+    refreshTokenHash: {
+      type: String,
+      default: null,
     },
   },
   {
@@ -26,9 +34,11 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-// Pre-save hook to hash password before saving to database
+// Hash da password antes de guardar
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password")) {
+    return next();
+  }
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -39,6 +49,7 @@ userSchema.pre("save", async function (next) {
   }
 });
 
+// Comparação de password
 userSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
