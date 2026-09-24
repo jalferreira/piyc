@@ -2,8 +2,9 @@ import Event from "../models/event.model.js";
 import Game from "../models/game.model.js";
 import { updateGameResult } from "./game.controller.js";
 
-// Tipo de evento visível apenas ao staff (gameMaster/admin) — não é exibido no site público
-const STAFF_ONLY_EVENT_TYPE = "oportunidade de golo";
+// Tipos de evento visíveis apenas ao staff (gameMaster/admin) — não são exibidos no site público
+const STAFF_ONLY_EVENT_TYPES = ["oportunidade de golo", "lance de perigo"];
+const isStaffOnlyType = (type) => STAFF_ONLY_EVENT_TYPES.includes(type);
 
 // Criar evento
 export const createEvent = async (req, res) => {
@@ -14,7 +15,7 @@ export const createEvent = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    if (type === STAFF_ONLY_EVENT_TYPE && !req.user) {
+    if (isStaffOnlyType(type) && !req.user) {
       return res
         .status(403)
         .json({ message: "Access denied - Staff only event type" });
@@ -82,7 +83,7 @@ export const getAllEvents = async (req, res) => {
   try {
     const isStaff = !!req.user;
 
-    const filter = isStaff ? {} : { type: { $ne: STAFF_ONLY_EVENT_TYPE } };
+    const filter = isStaff ? {} : { type: { $nin: STAFF_ONLY_EVENT_TYPES } };
 
     const events = await Event.find(filter)
       .populate("player")
@@ -109,7 +110,7 @@ export const getEventById = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    if (event.type === STAFF_ONLY_EVENT_TYPE && !req.user) {
+    if (isStaffOnlyType(event.type) && !req.user) {
       return res.status(404).json({ message: "Event not found" });
     }
 
@@ -160,12 +161,13 @@ export const updateEvent = async (req, res) => {
         "penalty",
         "penalty falhado",
         "oportunidade de golo",
+        "lance de perigo",
         "grande penalidade",
       ];
       if (!validTypes.includes(type)) {
         return res.status(400).json({ message: "Invalid event type" });
       }
-      if (type === STAFF_ONLY_EVENT_TYPE && !req.user) {
+      if (isStaffOnlyType(type) && !req.user) {
         return res
           .status(403)
           .json({ message: "Access denied - Staff only event type" });
@@ -270,11 +272,11 @@ const VALID_EVENT_TYPES = [
   "penalty",
   "penalty falhado",
   "grande penalidade",
-  STAFF_ONLY_EVENT_TYPE,
+  ...STAFF_ONLY_EVENT_TYPES,
 ];
 
 //  Exportar eventos (staff autenticado: gameMaster ou admin) — para criação de highlights em vídeo
-//  Por omissão exporta TODOS os tipos de evento (incluindo "oportunidade de golo").
+//  Por omissão exporta TODOS os tipos de evento (incluindo "oportunidade de golo" e "lance de perigo").
 //  Query params opcionais:
 //    - game=<id>   -> filtra apenas os eventos desse jogo (todos os dados do jogo) — uso recomendado
 //    - type=<tipo> -> filtra por um único tipo de evento
