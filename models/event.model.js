@@ -12,7 +12,6 @@ const eventSchema = new mongoose.Schema(
         "penalty",
         "penalty falhado",
         "oportunidade de golo",
-        "lance de perigo",
         "grande penalidade",
       ],
       required: true,
@@ -20,6 +19,13 @@ const eventSchema = new mongoose.Schema(
     time: {
       type: Number,
       required: true,
+    },
+    // Parte do jogo (1 ou 2). Com parte, o minuto conta dentro dessa parte (sem máximo).
+    // Opcional: eventos antigos e grandes penalidades não têm parte.
+    half: {
+      type: Number,
+      enum: [1, 2],
+      required: false,
     },
     player: {
       type: mongoose.Schema.Types.ObjectId,

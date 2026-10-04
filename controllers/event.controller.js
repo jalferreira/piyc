@@ -3,13 +3,38 @@ import Game from "../models/game.model.js";
 import { updateGameResult } from "./game.controller.js";
 
 // Tipos de evento visíveis apenas ao staff (gameMaster/admin) — não são exibidos no site público
-const STAFF_ONLY_EVENT_TYPES = ["oportunidade de golo", "lance de perigo"];
+const STAFF_ONLY_EVENT_TYPES = ["oportunidade de golo"];
 const isStaffOnlyType = (type) => STAFF_ONLY_EVENT_TYPES.includes(type);
+
+// Converte a parte vinda do pedido: undefined = não enviada, null = sem parte, 1 ou 2
+const parseHalf = (half) => {
+  if (half === undefined) return undefined;
+  if (half === null || half === "") return null;
+  return Number(half);
+};
+
+// Devolve a mensagem de erro, ou null se o minuto/parte forem válidos
+const validateEventTime = (type, time, half) => {
+  // Grande penalidade (desempate) acontece depois do fim do jogo, fora do limite normal de tempo
+  if (type === "grande penalidade") return null;
+
+  // Com parte, o minuto conta dentro dessa parte e não tem máximo (pode haver descontos)
+  if (half != null) {
+    if (half !== 1 && half !== 2) return "Half must be 1 or 2";
+    if (time < 0) return "Time cannot be negative";
+    return null;
+  }
+
+  // Sem parte (eventos antigos / outros sites): minuto do jogo inteiro
+  if (time < 0 || time > 60) return "Time must be between 0 and 60 minutes";
+  return null;
+};
 
 // Criar evento
 export const createEvent = async (req, res) => {
   try {
     const { type, time, player, team, game } = req.body;
+    const half = parseHalf(req.body.half);
 
     if (!type || !time || !player || !team || !game) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -21,11 +46,9 @@ export const createEvent = async (req, res) => {
         .json({ message: "Access denied - Staff only event type" });
     }
 
-    // Grande penalidade (desempate) acontece depois do fim do jogo, fora do limite normal de tempo
-    if (type !== "grande penalidade" && (time < 0 || time > 60)) {
-      return res
-        .status(400)
-        .json({ message: "Time must be between 0 and 60 minutes" });
+    const timeError = validateEventTime(type, time, half);
+    if (timeError) {
+      return res.status(400).json({ message: timeError });
     }
 
     let existingGame = await Game.findById(game)
@@ -57,6 +80,7 @@ export const createEvent = async (req, res) => {
     let event = await Event.create({
       type,
       time,
+      half: type === "grande penalidade" ? undefined : (half ?? undefined),
       player,
       team,
       game,
@@ -124,6 +148,7 @@ export const getEventById = async (req, res) => {
 export const updateEvent = async (req, res) => {
   try {
     const { type, time, player, team, game } = req.body;
+    const half = parseHalf(req.body.half);
 
     let event = await Event.findById(req.params.id);
     if (!event) {
@@ -142,14 +167,26 @@ export const updateEvent = async (req, res) => {
       return res.status(404).json({ message: "Game not found" });
     }
 
-    if (time !== undefined) {
+    if (time !== undefined || half !== undefined || type) {
       const effectiveType = type || event.type;
-      if (effectiveType !== "grande penalidade" && (time < 0 || time > 60)) {
-        return res
-          .status(400)
-          .json({ message: "Time must be between 0 and 60 minutes" });
+      const effectiveTime = time !== undefined ? time : event.time;
+      const effectiveHalf =
+        effectiveType === "grande penalidade"
+          ? null
+          : half !== undefined
+            ? half
+            : (event.half ?? null);
+
+      const timeError = validateEventTime(
+        effectiveType,
+        effectiveTime,
+        effectiveHalf,
+      );
+      if (timeError) {
+        return res.status(400).json({ message: timeError });
       }
-      event.time = time;
+      event.time = effectiveTime;
+      event.half = effectiveHalf ?? undefined;
     }
 
     if (type) {
@@ -161,7 +198,6 @@ export const updateEvent = async (req, res) => {
         "penalty",
         "penalty falhado",
         "oportunidade de golo",
-        "lance de perigo",
         "grande penalidade",
       ];
       if (!validTypes.includes(type)) {
@@ -276,7 +312,7 @@ const VALID_EVENT_TYPES = [
 ];
 
 //  Exportar eventos (staff autenticado: gameMaster ou admin) — para criação de highlights em vídeo
-//  Por omissão exporta TODOS os tipos de evento (incluindo "oportunidade de golo" e "lance de perigo").
+//  Por omissão exporta TODOS os tipos de evento (incluindo "oportunidade de golo").
 //  Query params opcionais:
 //    - game=<id>   -> filtra apenas os eventos desse jogo (todos os dados do jogo) — uso recomendado
 //    - type=<tipo> -> filtra por um único tipo de evento
@@ -304,7 +340,7 @@ export const exportEvents = async (req, res) => {
       .populate("player")
       .populate("team")
       .populate({ path: "game", populate: { path: "teams" } })
-      .sort({ "game.n_jogo": 1, time: 1 });
+      .sort({ "game.n_jogo": 1, half: 1, time: 1 });
 
     const rows = events.map((e) => ({
       eventId: e._id.toString(),
@@ -316,6 +352,7 @@ export const exportEvents = async (req, res) => {
       resultado: e.game?.result
         ? `${e.game.result.homeScore}-${e.game.result.awayScore}`
         : "",
+      parte: e.half ?? "",
       minuto: e.time,
       jogador: e.player?.name ?? "",
       numeroJogador: e.player?.number ?? "",
@@ -341,6 +378,7 @@ export const exportEvents = async (req, res) => {
       "campo",
       "equipas",
       "resultado",
+      "parte",
       "minuto",
       "jogador",
       "numeroJogador",
